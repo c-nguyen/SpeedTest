@@ -16,7 +16,7 @@ print("Dropbox now ready...")
 
 # UPLOADING FILE
 start = time()
-filename = 'TEST.txt'
+filename = 'TESTING.txt'
 f = open(filename, 'rb')
 response = client.put_file(filename, f)
 print("Upload complete!")
@@ -24,8 +24,6 @@ elapse = start - time()
 print('Elapsed time:', elapse)
 
 # DELETING FILE
-folder_metadata = client.metadata('/')          #displays relevant info in dropbox
-contents_list = folder_metadata['contents']     #this contains all files in dropbox. contents_list is a List of dicts
 path = '/%s'%(filename)
 client.file_delete(path)
 print("File deleted!")
