@@ -75,7 +75,7 @@ class Main(tk.Frame):
             
             # Start Test
             startTime = time.clock()                                        # Start timer
-            f, metadata = self.client.get_file_and_metadata(self.fileToDL)       # Download file to computer
+            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Download file to computer
             out = open(self.fileToUL, 'wb')
             out.write(f.read())
             out.close()
@@ -92,7 +92,7 @@ class Main(tk.Frame):
             self.uploadLabel.pack()                                  # Display upload label
             
             startTime = time.clock()                                 # Start timer
-            f = open(self.fileToUL, 'rb')                                 # Upload pic.jpg to Dropbox
+            f = open(self.fileToUL, 'rb')                            # Upload pic.jpg to Dropbox
             response = self.client.put_file(self.fileToUL, f)
             executionTime = time.clock() - startTime                 # Calculate total execution time
             self.uploadLabel.config(text = 'Upload File - FINISHED')
