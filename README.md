@@ -3,6 +3,6 @@ Internet Speed Test
 
 Language: Python
 
-Contributors: Christine Nguyen
-              Nelly Liu Peng
+Contributors: Christine Nguyen<br>
+              Nelly Liu Peng<br>
               Michael Dibeh
