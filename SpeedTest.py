@@ -11,13 +11,12 @@ import tkinter.ttk as ttk
 import threading
 import os
 import time
-
 class Main(tk.Frame):
     def __init__(self, parent):
         # Initialize class
         tk.Frame.__init__(self, parent)
         self.root = parent
-        self.grid()
+        self.pack()
 
         self.fileToDL = 'TESTING (1).txt'
         self.fileToUL = 'TESTING.txt'
@@ -92,8 +91,8 @@ class Main(tk.Frame):
             self.uploadLabel.pack()                                  # Display upload label
             
             startTime = time.clock()                                 # Start timer
-            f = open(self.fileToUL, 'rb')                            # Upload pic.jpg to Dropbox
-            response = self.client.put_file(self.fileToUL, f)
+            with open(self.fileToUL, 'rb') as f:                            # Upload pic.jpg to Dropbox
+                response = self.client.put_file(self.fileToUL, f)
             executionTime = time.clock() - startTime                 # Calculate total execution time
             self.uploadLabel.config(text = 'Upload File - FINISHED')
             # ENTER LINES TO CALCULATE UPLOAD RATE
@@ -102,13 +101,16 @@ class Main(tk.Frame):
             path = self.fileToUL
             self.client.file_delete(path) # Remove file from dropbox
             os.remove(self.fileToUL)      # Remove file from computer
-
             completeLabel = tk.Label(text = 'Completed')
             completeLabel.pack()
             self.root.config(cursor = 'plus')
             self.update()
 
+    def getFileToUL(self):
+        return self.fileToUL 
+
 if __name__ == '__main__':
     app = tk.Tk()
     Main(app).pack
     app.mainloop()
+    
