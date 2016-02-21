@@ -1,71 +1,51 @@
-import tkinter as tk
-import urllib.request as ul
-import os
-import time
+import dropbox
+from time import time       # To calculate upload/download times
 
-class Main(tk.Frame):
-    def __init__(self, parent):
-        tk.Frame.__init__(self, parent)
-        self.root = parent
-        self.grid()
-        self.getDimensions(parent)
-        self.setDefaults()
-        self.createWidgets()
+# SETTING UP CONNECTION WITH DROPBOX
+app_key = '6atbe2goehmkoa4'
+app_secret = '34k3mvy7et67wj5'
+flow = dropbox.client.DropboxOAuth2FlowNoRedirect(app_key, app_secret)
+authorize_url = flow.start()
+print('1. Go to: ' + authorize_url)
+print('2. Click "Allow" (you might have to log in first)')
+print('3. Copy the authorization code.')
+code = input("Enter the authorization code here: ").strip()
+access_token, user_id = flow.finish(code)
+client = dropbox.client.DropboxClient(access_token)
+print("Dropbox now ready...")
 
-    def getDimensions(self, parent):
-        # Get window dimensions and center application
-        width = 300
-        height = 200
-        windowWidth = parent.winfo_screenwidth()
-        windowHeight = parent.winfo_screenheight()
-        x = (windowWidth / 2) - (width / 2)
-        y = (windowHeight / 2) - (height / 2)
-        parent.geometry('%dx%d+%d+%d' % (width, height, x, y))
+# UPLOADING FILE
+start = time()
+filename = 'testing.txt'
+f = open(filename, 'rb')
+response = client.put_file(filename, f)
+print("Upload complete!")
+elapse = start - time()
+print('Elapsed time:', elapse)
 
-    def setDefaults(self):
-        self.root.title('Speed Test') # Title
-        self.config(cursor = "plus")  # Cursor
-        
-    def createWidgets(self):
-        startButton = tk.Button(self, text = 'Start Test', \
-                                    command = self.openTest)
-        startButton.pack()
+# DELETING FILE
+folder_metadata = client.metadata('/')          #displays relevant info in dropbox
+contents_list = folder_metadata['contents']     #this contains all files in dropbox. contents_list is a List of dicts
 
-    def openTest(self):
-        self.destroy()
-        testWindow = TestWindow(self.root)
+def search(filename, path):             #search thru dict (this method used only if there were already files in dropbox)
+    for items in contents_list:         #(this method not needed if dropbox is empty from start->only one file present, no need to search)
+        if items['path'] == path:
+            return items
+path = '/%s'%(filename)
+justaddedfile = search(filename,path)   #just addedfile is a dict
 
-class TestWindow(tk.Toplevel):
-    def __init__(self, original):
-    #def __init__(self):
-        tk.Toplevel.__init__(self)
-        self.original_frame = original
-        #self.geometry('300x200')
-        self.getDimensions(original)
-        self.createTestWindow()
+def delete(filename):
+    client.file_delete(path)
+delete(justaddedfile)
+print("File deleted!")
 
-    def getDimensions(self, parent):
-        # Get window dimensions and center application
-        width = 300
-        height = 200
-        windowWidth = parent.winfo_screenwidth()
-        windowHeight = parent.winfo_screenheight()
-        x = (windowWidth / 2) - (width / 2)
-        y = (windowHeight / 2) - (height / 2)
-        self.geometry('%dx%d+%d+%d' % (width, height, x, y))
-        
-    def createTestWindow(self):
-        info = tk.Label(self, text = "Downloading File")
-        info.pack()
-        self.testDownload('https://raw.githubusercontent.com/c-nguyen/c-nguyen.github.io/master/README.md')
+""" Replace current search() and delete() for this one if only one file in dropbox.
+Ideal to use when dropbox is initially empty. after a file is uploaded, immediately delete it.
+I commented this temporarily so we can keep on testing.
 
-    def testDownload(self, url):
-        startTime = time.clock()
-        ul.urlretrieve(url, 'downloadedFile')    # Download file
-        executionTime = time.clock() - startTime # Calculate execution time
-        os.remove('downloadedFile')              # Delete file
-        
-if __name__ == '__main__':
-    app = tk.Tk()
-    Main(app).pack
-    app.mainloop()
+def delete():
+    for item in contents_list:
+        delete(item)
+delete()
+"""
+
