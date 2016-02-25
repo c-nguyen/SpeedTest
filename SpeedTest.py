@@ -11,15 +11,22 @@ import tkinter.ttk as ttk
 import threading
 import os
 import time
+
 class Main(tk.Frame):
     def __init__(self, parent):
         # Initialize class
         tk.Frame.__init__(self, parent)
         self.root = parent
         self.pack()
-
+        """"
         self.fileToDL = 'TESTING (1).txt'
         self.fileToUL = 'TESTING.txt'
+        self.dFileSize = 21
+        """
+
+        self.fileToDL = '20MB (1).jpg'
+        self.fileToUL = '20MB.jpg'
+        self.dFileSize = 20899548
         
         self.getDimensions(parent)
         self.setDefaults()
@@ -48,6 +55,8 @@ class Main(tk.Frame):
 
         # Download Widgets
         self.downloadLabel = tk.Label(text = 'Downloading File')
+        self.dProgBar = ttk.Progressbar(self, orient = 'horizontal', length = 250,\
+                                        mode = 'determinate', maximum = self.dFileSize)
 
         # Upload Widgets
         self.uploadLabel = tk.Label(text = 'Uploading File')
@@ -55,7 +64,7 @@ class Main(tk.Frame):
         # Threads
         lock = threading.Lock()
         self.dThread = threading.Thread(target = self.startDownload, args = (lock,))
-        self.uThread = threading.Thread(target = self.startUpload, args = (lock,))
+        #self.uThread = threading.Thread(target = self.startUpload, args = (lock,))
         
     def changeToTest(self):
         # Change root window to test window
@@ -64,23 +73,32 @@ class Main(tk.Frame):
         self.client = dropbox.client.DropboxClient('RHOqvKFGSEAAAAAAAAAADKHuSyjNuI-gYmNtYvNIPODkTv1tHsv6KG3TvVyEzvv1')
         
         self.dThread.start() # Start download thread       
-        self.uThread.start() # Start upload thread
+        #self.uThread.start() # Start upload thread
         
     def startDownload(self, lock):
         with lock:
             # Setup for test
             self.root.config(cursor = 'wait')                               # Change cursor to wait
             self.downloadLabel.pack()                                       # Display download label
+            self.dProgBar.pack()                                            # Display download progress bar
             
             # Start Test
             startTime = time.clock()                                        # Start timer
-            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Download file to computer
-            out = open(self.fileToUL, 'wb')
-            out.write(f.read())
-            out.close()
+            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Get file from Dropbox
+            
+            out = open(self.fileToUL, 'wb')                                 # Open file for writing
+            currentSize = 0                                                 # Current size of downloaded file
+            while currentSize < self.dFileSize:                             # While downloading file size is less than total size
+                out.write(f.read(20))                                       # Read and write 20 bytes of file from Dropbox
+                currentSize += 20                                           # Add 20 to current size
+                self.dProgBar['value'] = currentSize                        # Increase progress bar by 20
+                if currentSize == self.dFileSize:
+                    print('done')
+            out.close()                                                     # Close file when finished
             executionTime = time.clock() - startTime                        # Calculate total execution time
             # ENTER LINES TO CALCULATE DOWNLOAD RATE
             self.downloadLabel.config(text = 'Downloading File - FINISHED')
+            self.dProgBar.stop()
             self.root.config(cursor = 'plus')
             self.update()
 
@@ -91,7 +109,7 @@ class Main(tk.Frame):
             self.uploadLabel.pack()                                  # Display upload label
             
             startTime = time.clock()                                 # Start timer
-            with open(self.fileToUL, 'rb') as f:                            # Upload pic.jpg to Dropbox
+            with open(self.fileToUL, 'rb') as f:                     # Upload pic.jpg to Dropbox
                 response = self.client.put_file(self.fileToUL, f)
             executionTime = time.clock() - startTime                 # Calculate total execution time
             self.uploadLabel.config(text = 'Upload File - FINISHED')
@@ -101,16 +119,14 @@ class Main(tk.Frame):
             path = self.fileToUL
             self.client.file_delete(path) # Remove file from dropbox
             os.remove(self.fileToUL)      # Remove file from computer
+            
             completeLabel = tk.Label(text = 'Completed')
             completeLabel.pack()
             self.root.config(cursor = 'plus')
             self.update()
 
-    def getFileToUL(self):
-        return self.fileToUL 
-
 if __name__ == '__main__':
     app = tk.Tk()
+    app.protocol('WM_DELETE_WINDOW', lambda : app.destroy())
     Main(app).pack
     app.mainloop()
-    
