@@ -91,8 +91,8 @@ class Main(tk.Frame):
             BYTES = 1000000                                                 # --Number of bytes to read from file at a time
             
             # Start Test
-            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Get file from Dropbox     
             startTime = time.clock()
+            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Get file from Dropbox     
             
             out = open(self.fileToUL, 'wb')                                 # Open file for writing
             currentSize = 0                                                 # Current size of downloaded file
@@ -105,19 +105,22 @@ class Main(tk.Frame):
                 readTimes += [readEndTime]                                  # --Add time length it took to download BYTES bytes to list
                 if currentSize == self.dFileSize:
                     print('done')
+                    
+            # Close file when finished
             out.close()
             
-            # Close file when finished
             executionTime = time.clock() - startTime                        # Calculate total execution time
 
             # --Calculate download rate
             totalTimeLength = 0
             for times in readTimes:
                 totalTimeLength += times
-            avgTimePerBYTES = totalTimeLength/len(readTimes)                # The avg time it takes to download BYTES bytes from file
+            avgTimePerBYTES = totalTimeLength/len(readTimes)                # --The avg time it takes to download BYTES bytes from file
             
             print("Average time it takes to download %s bytes:"%(BYTES), avgTimePerBYTES)
             print("Total download time:", executionTime)
+            print("File Size (total number of bytes):", self.dFileSize)
+            print("Total splits per file:", len(readTimes))
            
 
 
