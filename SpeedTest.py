@@ -2,7 +2,8 @@
 Contributors: Christine Nguyen
               Nelly Liu Peng
               Michael Dibeh
-CS 299 - Team Project
+CS 299 - Team Project: Speed Test
+Winter 2016
 """
 
 import dropbox
@@ -18,12 +19,16 @@ class Main(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.root = parent
         self.pack()
-        """"
+        """
         self.fileToDL = 'TESTING (1).txt'
         self.fileToUL = 'TESTING.txt'
         self.dFileSize = 21
         """
-
+        """
+        self.fileToDL = '105mb_file (1).pdf'
+        self.fileToUL = '105mb_file.pdf'
+        self.dFileSize = 110728540
+        """
         self.fileToDL = '20MB (1).jpg'
         self.fileToUL = '20MB.jpg'
         self.dFileSize = 20899548
@@ -64,7 +69,7 @@ class Main(tk.Frame):
         # Threads
         lock = threading.Lock()
         self.dThread = threading.Thread(target = self.startDownload, args = (lock,))
-        #self.uThread = threading.Thread(target = self.startUpload, args = (lock,))
+        self.uThread = threading.Thread(target = self.startUpload, args = (lock,))
         
     def changeToTest(self):
         # Change root window to test window
@@ -81,24 +86,44 @@ class Main(tk.Frame):
             self.root.config(cursor = 'wait')                               # Change cursor to wait
             self.downloadLabel.pack()                                       # Display download label
             self.dProgBar.pack()                                            # Display download progress bar
+
+            readTimes = []                                                  # --List to calculate average download rate
+            BYTES = 1000000                                                 # --Number of bytes to read from file at a time
             
             # Start Test
-            startTime = time.clock()                                        # Start timer
-            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Get file from Dropbox
+            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Get file from Dropbox     
+            startTime = time.clock()
             
             out = open(self.fileToUL, 'wb')                                 # Open file for writing
             currentSize = 0                                                 # Current size of downloaded file
             while currentSize < self.dFileSize:                             # While downloading file size is less than total size
-                out.write(f.read(20))                                       # Read and write 20 bytes of file from Dropbox
-                currentSize += 20                                           # Add 20 to current size
-                self.dProgBar['value'] = currentSize                        # Increase progress bar by 20
+                readStartTime = time.clock()                                # --Timestamp before downloading BYTES bytes
+                out.write(f.read(BYTES))                                    # Read and write BYTES bytes of file from Dropbox
+                readEndTime = time.clock() - readStartTime                  # --Timestamp after downloading BYTES bytes
+                currentSize += BYTES                                        # Add BYTES to current size
+                self.dProgBar['value'] = currentSize                        # Increase progress bar by BYTES
+                readTimes += [readEndTime]                                  # --Add time length it took to download BYTES bytes to list
                 if currentSize == self.dFileSize:
                     print('done')
-            out.close()                                                     # Close file when finished
+            out.close()
+            
+            # Close file when finished
             executionTime = time.clock() - startTime                        # Calculate total execution time
-            # ENTER LINES TO CALCULATE DOWNLOAD RATE
+
+            # --Calculate download rate
+            totalTimeLength = 0
+            for times in readTimes:
+                totalTimeLength += times
+            avgTimePerBYTES = totalTimeLength/len(readTimes)                # The avg time it takes to download BYTES bytes from file
+            
+            print("Average time it takes to download %s bytes:"%(BYTES), avgTimePerBYTES)
+            print("Total download time:", executionTime)
+           
+
+
+            
             self.downloadLabel.config(text = 'Downloading File - FINISHED')
-            self.dProgBar.stop()
+            #self.dProgBar.stop()
             self.root.config(cursor = 'plus')
             self.update()
 
@@ -112,7 +137,7 @@ class Main(tk.Frame):
             with open(self.fileToUL, 'rb') as f:                     # Upload pic.jpg to Dropbox
                 response = self.client.put_file(self.fileToUL, f)
             executionTime = time.clock() - startTime                 # Calculate total execution time
-            self.uploadLabel.config(text = 'Upload File - FINISHED')
+            self.uploadLabel.config(text = 'Uploading File - FINISHED')
             # ENTER LINES TO CALCULATE UPLOAD RATE
 
             # Delete File
