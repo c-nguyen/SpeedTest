@@ -40,7 +40,7 @@ class Main(tk.Frame):
     def getDimensions(self, parent):
         # Get window dimensions and center application
         width = 300
-        height = 200
+        height = 300
         windowWidth = parent.winfo_screenwidth()
         windowHeight = parent.winfo_screenheight()
         x = (windowWidth / 2) - (width / 2)
@@ -59,15 +59,19 @@ class Main(tk.Frame):
         self.startButton.pack()
 
         # Download Widgets
-        self.downloadLabel = tk.Label(text = 'Downloading File')
-        self.dProgBar = ttk.Progressbar(self, orient = 'horizontal', length = 250,\
+        self.ProgBar = ttk.Progressbar(self, orient = 'horizontal', length = 250,\
                                         mode = 'determinate', maximum = self.dFileSize)
+        self.downloadLabel = tk.Label(text = 'Downloading File')
         self.downloadData1 = tk.Label(text = 'Total execution time:')
         self.downloadData2 = tk.Label(text = 'Average time (seconds) per MB:')
         self.downloadData3 = tk.Label(text = 'Average Megabits per second:')
 
         # Upload Widgets
+        # upload will use same ProgBar widget as above
         self.uploadLabel = tk.Label(text = 'Uploading File')
+        self.uploadData1 = tk.Label(text = 'Total execution time:')
+        self.uploadData2 = tk.Label(text = 'Average time (seconds) per MB:')
+        self.uploadData3 = tk.Label(text = 'Average Megabits per second:')
 
         # Threads
         lock = threading.Lock()
@@ -81,15 +85,15 @@ class Main(tk.Frame):
         self.client = dropbox.client.DropboxClient('RHOqvKFGSEAAAAAAAAAADKHuSyjNuI-gYmNtYvNIPODkTv1tHsv6KG3TvVyEzvv1')
         
         self.dThread.start() # Start download thread       
-        #self.uThread.start() # Start upload thread
+        self.uThread.start() # Start upload thread
         
     def startDownload(self, lock):
         with lock:
             # Setup for test
             self.root.config(cursor = 'wait')                               # Change cursor to wait
             self.downloadLabel.pack()                                       # Display download label
-            self.dProgBar.pack()                                            # Display download progress bar        
-            self.downloadData1.pack()                                       # Display 'Total download time'
+            self.ProgBar.pack()                                             # Display download progress bar        
+            self.downloadData1.pack()                                       # Display 'Total execution time'
             self.downloadData2.pack()                                       # Display 'Average time (seconds) per MB'
             self.downloadData3.pack()                                       # Display 'Average Megabits per second'
 
@@ -107,7 +111,7 @@ class Main(tk.Frame):
                 out.write(f.read(BYTES))                                    # Read and write BYTES bytes of file from Dropbox
                 readEndTime = time.clock() - readStartTime                  # --Timestamp after downloading BYTES bytes
                 currentSize += BYTES                                        # Add BYTES to current size
-                self.dProgBar['value'] = currentSize                        # Increase progress bar by BYTES
+                self.ProgBar['value'] = currentSize                         # Increase progress bar by BYTES
                 readTimes += [readEndTime]                                  # --Add time length it took to download BYTES bytes to list
                 if currentSize == self.dFileSize:
                     print('done')
@@ -145,7 +149,7 @@ class Main(tk.Frame):
             self.downloadData2.config(text = 'Average time (seconds) per KB: ' + str(avgTimePerKB))
             self.downloadData3.config(text = 'Average Megabits per second: ' + str(avgmbps))
             
-            #self.dProgBar.stop()
+            self.ProgBar.stop()
             self.root.config(cursor = 'plus')
             self.update()
 
@@ -154,6 +158,10 @@ class Main(tk.Frame):
             # Setup for test
             self.root.config(cursor = 'wait')                        # Change cursor to wait
             self.uploadLabel.pack()                                  # Display upload label
+            self.ProgBar.pack()                                      # Display upload progress bar        
+            self.uploadData1.pack()                                  # Display 'Total execution time'
+            self.uploadData2.pack()                                  # Display 'Average time (seconds) per MB'
+            self.uploadData3.pack()                                  # Display 'Average Megabits per second'
             
             startTime = time.clock()                                 # Start timer
             with open(self.fileToUL, 'rb') as f:                     # Upload file to Dropbox
