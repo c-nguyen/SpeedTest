@@ -25,13 +25,13 @@ class Main(tk.Frame):
         self.dFileSize = 21
         """
         """
-        self.fileToDL = '105mb_file (1).pdf'
-        self.fileToUL = '105mb_file.pdf'
-        self.dFileSize = 110728540
-        """
         self.fileToDL = '20MB (1).jpg'
         self.fileToUL = '20MB.jpg'
         self.dFileSize = 20899548
+        """
+        self.fileToDL = '105MB (1).pdf'
+        self.fileToUL = '105MB.pdf'
+        self.dFileSize = 110728540
         
         self.getDimensions(parent)
         self.setDefaults()
@@ -62,6 +62,9 @@ class Main(tk.Frame):
         self.downloadLabel = tk.Label(text = 'Downloading File')
         self.dProgBar = ttk.Progressbar(self, orient = 'horizontal', length = 250,\
                                         mode = 'determinate', maximum = self.dFileSize)
+        self.downloadData1 = tk.Label(text = 'Total download time:')
+        self.downloadData2 = tk.Label(text = 'Average time (seconds) per MB:')
+        self.downloadData3 = tk.Label(text = 'Average MB per second:')
 
         # Upload Widgets
         self.uploadLabel = tk.Label(text = 'Uploading File')
@@ -116,12 +119,15 @@ class Main(tk.Frame):
             for times in readTimes:
                 totalTimeLength += times
             avgTimePerBYTES = totalTimeLength/len(readTimes)                # --The avg time it takes to download BYTES bytes from file
-            
+
+            print("File name", self.fileToUL)
             print("Average time it takes to download %s bytes:"%(BYTES), avgTimePerBYTES)
-            print("Total download time:", executionTime)
+            print("Total execution time:", executionTime)
             print("File Size (total number of bytes):", self.dFileSize)
             print("Total splits per file:", len(readTimes))
-           
+            print("Average time (seconds) per kilobyte:", 1000*avgTimePerBYTES/BYTES)
+            print("Average BYTES per second:", BYTES/avgTimePerBYTES)
+            print("Average MB per second:", BYTES/avgTimePerBYTES/1000000)
 
 
             
@@ -137,7 +143,7 @@ class Main(tk.Frame):
             self.uploadLabel.pack()                                  # Display upload label
             
             startTime = time.clock()                                 # Start timer
-            with open(self.fileToUL, 'rb') as f:                     # Upload pic.jpg to Dropbox
+            with open(self.fileToUL, 'rb') as f:                     # Upload file to Dropbox
                 response = self.client.put_file(self.fileToUL, f)
             executionTime = time.clock() - startTime                 # Calculate total execution time
             self.uploadLabel.config(text = 'Uploading File - FINISHED')
