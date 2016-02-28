@@ -24,7 +24,7 @@ class Main(tk.Frame):
         self.fileToUL = 'TESTING.txt'
         self.dFileSize = 21
         """
-        """
+        
         self.fileToDL = '20MB (1).jpg'
         self.fileToUL = '20MB.jpg'
         self.dFileSize = 20899548
@@ -32,7 +32,7 @@ class Main(tk.Frame):
         self.fileToDL = '105MB (1).pdf'
         self.fileToUL = '105MB.pdf'
         self.dFileSize = 110728540
-        
+        """
         self.getDimensions(parent)
         self.setDefaults()
         self.createWidgets()
@@ -62,9 +62,9 @@ class Main(tk.Frame):
         self.downloadLabel = tk.Label(text = 'Downloading File')
         self.dProgBar = ttk.Progressbar(self, orient = 'horizontal', length = 250,\
                                         mode = 'determinate', maximum = self.dFileSize)
-        self.downloadData1 = tk.Label(text = 'Total download time:')
+        self.downloadData1 = tk.Label(text = 'Total execution time:')
         self.downloadData2 = tk.Label(text = 'Average time (seconds) per MB:')
-        self.downloadData3 = tk.Label(text = 'Average MB per second:')
+        self.downloadData3 = tk.Label(text = 'Average Megabits per second:')
 
         # Upload Widgets
         self.uploadLabel = tk.Label(text = 'Uploading File')
@@ -88,7 +88,10 @@ class Main(tk.Frame):
             # Setup for test
             self.root.config(cursor = 'wait')                               # Change cursor to wait
             self.downloadLabel.pack()                                       # Display download label
-            self.dProgBar.pack()                                            # Display download progress bar
+            self.dProgBar.pack()                                            # Display download progress bar        
+            self.downloadData1.pack()                                       # Display 'Total download time'
+            self.downloadData2.pack()                                       # Display 'Average time (seconds) per MB'
+            self.downloadData3.pack()                                       # Display 'Average Megabits per second'
 
             readTimes = []                                                  # --List to calculate average download rate
             BYTES = 1000000                                                 # --Number of bytes to read from file at a time
@@ -120,18 +123,28 @@ class Main(tk.Frame):
                 totalTimeLength += times
             avgTimePerBYTES = totalTimeLength/len(readTimes)                # --The avg time it takes to download BYTES bytes from file
 
+            # Display results on console
+            avgTimePerKB = 1000*avgTimePerBYTES/BYTES
+            avgBYTESPerSec = BYTES/avgTimePerBYTES
+            avgMBPerSec = BYTES/avgTimePerBYTES/1000000
+            avgmbps = avgMBPerSec*8
+            
             print("File name", self.fileToUL)
             print("Average time it takes to download %s bytes:"%(BYTES), avgTimePerBYTES)
             print("Total execution time:", executionTime)
             print("File Size (total number of bytes):", self.dFileSize)
             print("Total splits per file:", len(readTimes))
-            print("Average time (seconds) per kilobyte:", 1000*avgTimePerBYTES/BYTES)
-            print("Average BYTES per second:", BYTES/avgTimePerBYTES)
-            print("Average MB per second:", BYTES/avgTimePerBYTES/1000000)
+            print("Average time (seconds) per kilobyte:", avgTimePerKB)
+            print("Average BYTES per second:", avgBYTESPerSec)
+            print("Average MB per second:", avgMBPerSec)
+            print("Average MegaBits per second:", avgmbps)
 
-
-            
+            # Display results on window
             self.downloadLabel.config(text = 'Downloading File - FINISHED')
+            self.downloadData1.config(text = 'Total execution time: ' + str(executionTime))
+            self.downloadData2.config(text = 'Average time (seconds) per KB: ' + str(avgTimePerKB))
+            self.downloadData3.config(text = 'Average Megabits per second: ' + str(avgmbps))
+            
             #self.dProgBar.stop()
             self.root.config(cursor = 'plus')
             self.update()
