@@ -5,7 +5,7 @@ Contributors: Christine Nguyen
 CS 299 - Team Project: Speed Test
 Winter 2016
 """
-
+from io import BytesIO
 import dropbox
 import tkinter as tk
 import tkinter.ttk as ttk
@@ -54,21 +54,24 @@ class Main(tk.Frame):
 
     def createWidgets(self):
         # Default Widgets
-        self.startButton = tk.Button(self, text = 'Start Test')
+        self.startButton = tk.Button(self.root, text = 'Start Test')
         self.startButton.configure(command = self.changeToTest)
         self.startButton.pack()
 
+        # Test Widgets
+        s = ttk.Style()
+        s.theme_use('clam')
+        s.configure('red.Horizontal.TProgressbar', foreground = 'red', background = 'red')
+        self.ProgBar = ttk.Progressbar(self.root, orient = 'horizontal', length = 250,\
+                                       mode = 'determinate', maximum = self.dFileSize, style = 'red.Horizontal.TProgressbar')
+        self.infoLabel = tk.Label(text = 'Calculating Download Speed')
+
         # Download Widgets
-        self.ProgBar = ttk.Progressbar(self, orient = 'horizontal', length = 250,\
-                                        mode = 'determinate', maximum = self.dFileSize)
-        self.downloadLabel = tk.Label(text = 'Downloading File')
         self.downloadData1 = tk.Label(text = 'Total execution time:')
         self.downloadData2 = tk.Label(text = 'Average time (seconds) per MB:')
         self.downloadData3 = tk.Label(text = 'Average Megabits per second:')
 
         # Upload Widgets
-        # upload will use same ProgBar widget as above
-        self.uploadLabel = tk.Label(text = 'Uploading File')
         self.uploadData1 = tk.Label(text = 'Total execution time:')
         self.uploadData2 = tk.Label(text = 'Average time (seconds) per MB:')
         self.uploadData3 = tk.Label(text = 'Average Megabits per second:')
@@ -90,48 +93,52 @@ class Main(tk.Frame):
     def startDownload(self, lock):
         with lock:
             # Setup for test
+            self.infoLabel.pack()                                       # Display download label
+            self.ProgBar.pack()                                             # Display download progress bar
             self.root.config(cursor = 'wait')                               # Change cursor to wait
-            self.downloadLabel.pack()                                       # Display download label
-            self.ProgBar.pack()                                             # Display download progress bar        
-            self.downloadData1.pack()                                       # Display 'Total execution time'
-            self.downloadData2.pack()                                       # Display 'Average time (seconds) per MB'
-            self.downloadData3.pack()                                       # Display 'Average Megabits per second'
+            #self.downloadData1.pack()                                       # Display 'Total execution time'
+            #self.downloadData2.pack()                                       # Display 'Average time (seconds) per MB'
+            #self.downloadData3.pack()                                       # Display 'Average Megabits per second'
 
             readTimes = []                                                  # --List to calculate average download rate
             BYTES = 1000000                                                 # --Number of bytes to read from file at a time
             
             # Start Test
-            startTime = time.clock()
+            startTime = time.time()
             f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Get file from Dropbox     
             
             out = open(self.fileToUL, 'wb')                                 # Open file for writing
             currentSize = 0                                                 # Current size of downloaded file
             while currentSize < self.dFileSize:                             # While downloading file size is less than total size
-                readStartTime = time.clock()                                # --Timestamp before downloading BYTES bytes
+                readStartTime = time.time()                                # --Timestamp before downloading BYTES bytes
                 out.write(f.read(BYTES))                                    # Read and write BYTES bytes of file from Dropbox
-                readEndTime = time.clock() - readStartTime                  # --Timestamp after downloading BYTES bytes
+                readEndTime = time.time() - readStartTime                  # --Timestamp after downloading BYTES bytes
                 currentSize += BYTES                                        # Add BYTES to current size
                 self.ProgBar['value'] = currentSize                         # Increase progress bar by BYTES
                 readTimes += [readEndTime]                                  # --Add time length it took to download BYTES bytes to list
-                if currentSize == self.dFileSize:
-                    print('done')
                     
             # Close file when finished
             out.close()
             
-            executionTime = time.clock() - startTime                        # Calculate total execution time
+            executionTime = time.time() - startTime                        # Calculate total execution time
 
             # --Calculate download rate
             totalTimeLength = 0
             for times in readTimes:
                 totalTimeLength += times
-            avgTimePerBYTES = totalTimeLength/len(readTimes)                # --The avg time it takes to download BYTES bytes from file
+            avgTimePerBYTES = totalTimeLength / len(readTimes)                # --The avg time it takes to download BYTES bytes from file
 
             # Display results on console
             avgTimePerKB = 1000*avgTimePerBYTES/BYTES
             avgBYTESPerSec = BYTES/avgTimePerBYTES
             avgMBPerSec = BYTES/avgTimePerBYTES/1000000
             avgmbps = avgMBPerSec*8
+
+            speed = self.dFileSize / executionTime
+            finalSpeed = speed / 1000000
+            conversion = finalSpeed * 8
+
+            print('DOWNLOAD SPEED', conversion)
             
             print("File name", self.fileToUL)
             print("Average time it takes to download %s bytes:"%(BYTES), avgTimePerBYTES)
@@ -144,7 +151,6 @@ class Main(tk.Frame):
             print("Average MegaBits per second:", avgmbps)
 
             # Display results on window
-            self.downloadLabel.config(text = 'Downloading File - FINISHED')
             self.downloadData1.config(text = 'Total execution time: ' + str(executionTime))
             self.downloadData2.config(text = 'Average time (seconds) per KB: ' + str(avgTimePerKB))
             self.downloadData3.config(text = 'Average Megabits per second: ' + str(avgmbps))
@@ -157,19 +163,27 @@ class Main(tk.Frame):
         with lock:
             # Setup for test
             self.root.config(cursor = 'wait')                        # Change cursor to wait
-            self.uploadLabel.pack()                                  # Display upload label
-            self.ProgBar.pack()                                      # Display upload progress bar        
-            self.uploadData1.pack()                                  # Display 'Total execution time'
-            self.uploadData2.pack()                                  # Display 'Average time (seconds) per MB'
-            self.uploadData3.pack()                                  # Display 'Average Megabits per second'
-            
-            startTime = time.clock()                                 # Start timer
+            self.infoLabel.config(text = 'Calculating Upload Speed') # Display upload label
+            self.ProgBar['value'] = 0                                      # Display upload progress bar        
+            #self.uploadData1.pack()                                  # Display 'Total execution time'
+            #self.uploadData2.pack()                                  # Display 'Average time (seconds) per MB'
+            #self.uploadData3.pack()                                  # Display 'Average Megabits per second'
+            """
+            startTime = time.time()                                 # Start timer
             with open(self.fileToUL, 'rb') as f:                     # Upload file to Dropbox
                 response = self.client.put_file(self.fileToUL, f)
-            executionTime = time.clock() - startTime                 # Calculate total execution time
-            self.uploadLabel.config(text = 'Uploading File - FINISHED')
+            executionTime = time.time() - startTime                 # Calculate total execution time
             # ENTER LINES TO CALCULATE UPLOAD RATE
+            """
+            offset = 0
+            with open(self.fileToUL, 'rb') as f:
+                while offset < self.dFileSize:
+                    offset = self.client.upload_chunk( \
+                        BytesIO(f.read(1000000)), offset = offset)
+                    self.ProgBar['value'] = offset
 
+            client.commit_chunked_upload(self.fileToUL)
+                
             # Delete File
             path = self.fileToUL
             self.client.file_delete(path) # Remove file from dropbox
