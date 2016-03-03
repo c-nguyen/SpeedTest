@@ -1,0 +1,24 @@
+Speed Test
+
+Main
+- All things in middle of window (use grid not pack) [Christine]
+
+First Window [Michael]
+- Title = speed test
+- Button
+- Background = image or solid
+- Style button
+
+Second Window
+- Background [Nelly]
+- Upload progress bar [Christine]
+- Two files and take average [Nelly]
+
+Third Window
+- Results
+
+Powerpoint
+- Widgets [Nelly]
+- Threads / Locks [Christine]
+- Speed test online vs. ours [Michael]
+- Dropbox SDK [Michael]
