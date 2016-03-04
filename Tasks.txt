@@ -1,5 +1,7 @@
 Speed Test
 
+http://testmy.net/
+
 Main
 - All things in middle of window (use grid not pack) [Christine]
 
