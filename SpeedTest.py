@@ -87,7 +87,7 @@ class Main(tk.Frame):
 
         self.client = dropbox.client.DropboxClient('RHOqvKFGSEAAAAAAAAAADKHuSyjNuI-gYmNtYvNIPODkTv1tHsv6KG3TvVyEzvv1')
         
-        self.dThread.start() # Start download thread       
+        #self.dThread.start() # Start download thread       
         self.uThread.start() # Start upload thread
         
     def startDownload(self, lock):
@@ -162,32 +162,31 @@ class Main(tk.Frame):
     def startUpload(self, lock):
         with lock:
             # Setup for test
+            self.ProgBar.pack()
+            self.infoLabel.pack()
+            
             self.root.config(cursor = 'wait')                        # Change cursor to wait
             self.infoLabel.config(text = 'Calculating Upload Speed') # Display upload label
             self.ProgBar['value'] = 0                                      # Display upload progress bar        
             #self.uploadData1.pack()                                  # Display 'Total execution time'
             #self.uploadData2.pack()                                  # Display 'Average time (seconds) per MB'
             #self.uploadData3.pack()                                  # Display 'Average Megabits per second'
-            """
-            startTime = time.time()                                 # Start timer
-            with open(self.fileToUL, 'rb') as f:                     # Upload file to Dropbox
-                response = self.client.put_file(self.fileToUL, f)
-            executionTime = time.time() - startTime                 # Calculate total execution time
-            # ENTER LINES TO CALCULATE UPLOAD RATE
-            """
+
+            chunk_size = 1024*1024 # 1MB
+            upload_id = None
             offset = 0
             with open(self.fileToUL, 'rb') as f:
                 while offset < self.dFileSize:
-                    offset = self.client.upload_chunk( \
-                        BytesIO(f.read(1000000)), offset = offset)
+                    offset, upload_id = self.client.upload_chunk(
+                        BytesIO(f.read(chunk_size)),
+                        offset = offset, upload_id = upload_id)
                     self.ProgBar['value'] = offset
-
-            client.commit_chunked_upload(self.fileToUL)
+            self.client.commit_chunked_upload('/auto/' + self.fileToUL, upload_id)
                 
             # Delete File
-            path = self.fileToUL
-            self.client.file_delete(path) # Remove file from dropbox
-            os.remove(self.fileToUL)      # Remove file from computer
+            
+            self.client.file_delete(self.fileToUL) # Remove file from dropbox
+            os.remove(self.fileToUL)               # Remove file from computer
             
             completeLabel = tk.Label(text = 'Completed')
             completeLabel.pack()
