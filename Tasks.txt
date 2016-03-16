@@ -23,4 +23,4 @@ Powerpoint
 - Widgets [Nelly]
 - Threads / Locks [Christine]
 - Speed test online vs. ours [Michael]
-- Dropbox SDK [Michael]
+- Dropbox SDK [Nelly]

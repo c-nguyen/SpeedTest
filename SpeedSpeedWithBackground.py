@@ -6,7 +6,7 @@ CS 299 - Team Project: Speed Test
 Winter 2016
 """
 from tkinter import *
-from PIL import Image, ImageTk
+#from PIL import Image, ImageTk
 from io import BytesIO
 import dropbox
 import tkinter as tk
@@ -50,12 +50,12 @@ class Main(tk.Frame):
         # Set defaults for window
         self.root.title('Speed Test')      # Title
         self.root.config(cursor = "plus")  # Cursor
-        background_image=tk.PhotoImage(file='/Users/michael/Downloads/101169 (2).gif')
+
+        #Background image
+        background_image=tk.PhotoImage(file='101169 (2).gif')
         background_label = tk.Label(self.root, image=background_image)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
         background_label.image = background_image
-
-
 
     def createWidgets(self):
         # Default Widgets
