@@ -5,6 +5,7 @@ Contributors: Christine Nguyen
 CS 299 - Team Project: Speed Test
 Winter 2016
 """
+
 from io import BytesIO
 import dropbox
 import tkinter as tk
@@ -16,65 +17,60 @@ import time
 class Main(tk.Frame):
     def __init__(self, parent):
         # Initialize class
-        tk.Frame.__init__(self, parent)
         self.root = parent
-        self.pack()
-        """
-        self.fileToDL = 'TESTING (1).txt'
-        self.fileToUL = 'TESTING.txt'
-        self.dFileSize = 21
-        """
+
+        self.width = 565
+        self.height = 301
         
-        self.fileToDL = '20MB (1).jpg'
-        self.fileToUL = '20MB.jpg'
-        self.dFileSize = 20899548
-        """
-        self.fileToDL = '105MB (1).pdf'
-        self.fileToUL = '105MB.pdf'
-        self.dFileSize = 110728540
-        """
+        self.testCanvas = tk.Canvas(self.root, width = self.width, height = self.height,\
+                                bd = 0, highlightthickness = 0)     # Test window
+        self.resultCanvas = tk.Canvas(self.root, width = self.width, height = self.height,\
+                                bd = 0, highlightthickness = 0)     # Result window
+        
+        # Files to be tested
+        self.fileToDL_1 = '20MB (1).jpg'
+        self.fileToUL_1 = '20MB.jpg'
+        self.FileSize_1 = 20899548
+        
+        self.fileToDL_2 = '105MB (1).pdf'
+        self.fileToUL_2 = '105MB.pdf'
+        self.FileSize_2 = 110728540
+
+        # Set remanining settings
         self.getDimensions(parent)
         self.setDefaults()
         self.createWidgets()
 
     def getDimensions(self, parent):
         # Get window dimensions and center application
-        width = 300
-        height = 300
         windowWidth = parent.winfo_screenwidth()
         windowHeight = parent.winfo_screenheight()
-        x = (windowWidth / 2) - (width / 2)
-        y = (windowHeight / 2) - (height / 2)
-        parent.geometry('%dx%d+%d+%d' % (width, height, x, y))
+        x = (windowWidth / 2) - (self.width / 2)
+        y = (windowHeight / 2) - (self.height / 2)
+        parent.geometry('%dx%d+%d+%d' % (self.width, self.height, x, y))
 
     def setDefaults(self):
         # Set defaults for window
         self.root.title('Speed Test')      # Title
         self.root.config(cursor = "plus")  # Cursor
 
+        self.background_image=tk.PhotoImage(file='101169 (2).gif')
+        self.background_label = tk.Label(self.root, image=self.background_image)
+        self.background_label.pack(side = 'top', fill = 'both', expand = 'yes')
+        self.background_label.image = self.background_image
+
     def createWidgets(self):
         # Default Widgets
-        self.startButton = tk.Button(self.root, text = 'Start Test')
+        self.startButton = tk.Button(self.background_label, text = 'Start Test')
         self.startButton.configure(command = self.changeToTest)
-        self.startButton.pack()
+        self.startButton.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER)
 
-        # Test Widgets
+        # Progress Bar Widget
         s = ttk.Style()
-        s.theme_use('clam')
-        s.configure('red.Horizontal.TProgressbar', foreground = 'red', background = 'red')
-        self.ProgBar = ttk.Progressbar(self.root, orient = 'horizontal', length = 250,\
-                                       mode = 'determinate', maximum = self.dFileSize, style = 'red.Horizontal.TProgressbar')
-        self.infoLabel = tk.Label(text = 'Calculating Download Speed')
-
-        # Download Widgets
-        self.downloadData1 = tk.Label(text = 'Total execution time:')
-        self.downloadData2 = tk.Label(text = 'Average time (seconds) per MB:')
-        self.downloadData3 = tk.Label(text = 'Average Megabits per second:')
-
-        # Upload Widgets
-        self.uploadData1 = tk.Label(text = 'Total execution time:')
-        self.uploadData2 = tk.Label(text = 'Average time (seconds) per MB:')
-        self.uploadData3 = tk.Label(text = 'Average Megabits per second:')
+        s.theme_use('alt')
+        s.configure('white.Horizontal.TProgressbar', background = 'white')
+        self.ProgBar = ttk.Progressbar(self.testCanvas, orient = 'horizontal', length = 250,\
+                                       mode = 'determinate', style = 'white.Horizontal.TProgressbar')
 
         # Threads
         lock = threading.Lock()
@@ -83,118 +79,176 @@ class Main(tk.Frame):
         
     def changeToTest(self):
         # Change root window to test window
-        self.startButton.forget()
+        self.background_label.forget()
+        self.background_label.destroy()
 
+        self.testText1 = 'Calculating Download Speed'
+        self.testText2 = 'Calculating Upload Speed'
+        self.fileSizeText1 = 'Testing Speed of Small File'
+        self.fileSizeText2 = 'Testing Speed of Large File'
+        
+        self.testCanvas.pack(side = 'top', fill = 'both', expand = 'yes')
+        self.testCanvas.create_image(0, 0, image = self.background_image, anchor = 'nw')
+        
         self.client = dropbox.client.DropboxClient('RHOqvKFGSEAAAAAAAAAADKHuSyjNuI-gYmNtYvNIPODkTv1tHsv6KG3TvVyEzvv1')
         
-        #self.dThread.start() # Start download thread       
+        self.dThread.start() # Start download thread       
         self.uThread.start() # Start upload thread
-        
+
+        #self.changeToResults()
+
     def startDownload(self, lock):
         with lock:
-            # Setup for test
-            self.infoLabel.pack()                                       # Display download label
-            self.ProgBar.pack()                                             # Display download progress bar
-            self.root.config(cursor = 'wait')                               # Change cursor to wait
-            #self.downloadData1.pack()                                       # Display 'Total execution time'
-            #self.downloadData2.pack()                                       # Display 'Average time (seconds) per MB'
-            #self.downloadData3.pack()                                       # Display 'Average Megabits per second'
+            # Display text
+            self.text1 = self.testCanvas.create_text(self.width/2, (self.height/2)*0.3, text = self.testText1,\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+            self.text2 = self.testCanvas.create_text(self.width/2, (self.height/2)*0.5, text = self.fileSizeText1,\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 14, 'bold'))
 
-            readTimes = []                                                  # --List to calculate average download rate
-            BYTES = 1000000                                                 # --Number of bytes to read from file at a time
+            # Store average data from two files
+            dataTime1 = self.startDTest(self.fileToDL_1, self.fileToUL_1, self.FileSize_1)
+            self.testCanvas.itemconfig(self.text2, text = self.fileSizeText2)
+            dataTime2 = self.startDTest(self.fileToDL_2, self.fileToUL_2, self.FileSize_2)
+            self.avgTime1 = (dataTime1 + dataTime2) / 2
+
+            """
+            # Print results to console
+            print("Download times...")
+            print("Time (mbps) for file 1:", dataTime1)
+            print("Time (mbps) for file 2:", dataTime2)
+            print("Average time (mbps):", avgTime)
+            print()
+            """
+        
+    def startDTest(self, fileToDL, fileToUL, FileSize):
+        # Setup for test
+        self.ProgBar['value'] = 0
+        self.ProgBar['maximum'] = FileSize
+        self.ProgBar.place(relx = 0.5, rely = 0.5, anchor = tk.CENTER)   # Display download progress bar
+        self.root.config(cursor = 'wait')                                # Change cursor to wait
             
-            # Start Test
-            startTime = time.time()
-            f, metadata = self.client.get_file_and_metadata(self.fileToDL)  # Get file from Dropbox     
+        # Start Test
+        startTime = time.time()                                          # --Timestamp before downloading file
+        f, metadata = self.client.get_file_and_metadata(fileToDL)        # Get file from Dropbox
             
-            out = open(self.fileToUL, 'wb')                                 # Open file for writing
-            currentSize = 0                                                 # Current size of downloaded file
-            while currentSize < self.dFileSize:                             # While downloading file size is less than total size
-                readStartTime = time.time()                                # --Timestamp before downloading BYTES bytes
-                out.write(f.read(BYTES))                                    # Read and write BYTES bytes of file from Dropbox
-                readEndTime = time.time() - readStartTime                  # --Timestamp after downloading BYTES bytes
-                currentSize += BYTES                                        # Add BYTES to current size
-                self.ProgBar['value'] = currentSize                         # Increase progress bar by BYTES
-                readTimes += [readEndTime]                                  # --Add time length it took to download BYTES bytes to list
-                    
-            # Close file when finished
-            out.close()
+        BYTES = 1000000 # 1MB                                            # Constant determining how many bytes to read at a time
+        out = open(fileToUL, 'wb')                                       # Open file for writing
+        currentSize = 0                                                  # Current size of downloaded file
+        while currentSize < FileSize:                                    # While downloading file size is less than total size
+            out.write(f.read(BYTES))                                     # Read and write BYTES bytes of file from Dropbox
+            currentSize += BYTES                                         # Add BYTES to current size
+            self.ProgBar['value'] = currentSize                          # Increase progress bar by BYTES
+        out.close()                                                      # Close file when finished
             
-            executionTime = time.time() - startTime                        # Calculate total execution time
+        executionTime = time.time() - startTime                          # --Timestamp after downloading file
 
-            # --Calculate download rate
-            totalTimeLength = 0
-            for times in readTimes:
-                totalTimeLength += times
-            avgTimePerBYTES = totalTimeLength / len(readTimes)                # --The avg time it takes to download BYTES bytes from file
+        # Display results on console
+        speed = FileSize / executionTime            # bytes per second
+        finalSpeed = speed / 1000000                # convert to MB
+        conversion = finalSpeed * 8            # convert to megabits
 
-            # Display results on console
-            avgTimePerKB = 1000*avgTimePerBYTES/BYTES
-            avgBYTESPerSec = BYTES/avgTimePerBYTES
-            avgMBPerSec = BYTES/avgTimePerBYTES/1000000
-            avgmbps = avgMBPerSec*8
-
-            speed = self.dFileSize / executionTime
-            finalSpeed = speed / 1000000
-            conversion = finalSpeed * 8
-
-            print('DOWNLOAD SPEED', conversion)
+        """
+        print("File name:", fileToUL)
+        print("Bytes per second:", speed)
+        print("Megabytes per second:", finalSpeed)
+        print("Megabits per second:", conversion)
+        print()
+        """
             
-            print("File name", self.fileToUL)
-            print("Average time it takes to download %s bytes:"%(BYTES), avgTimePerBYTES)
-            print("Total execution time:", executionTime)
-            print("File Size (total number of bytes):", self.dFileSize)
-            print("Total splits per file:", len(readTimes))
-            print("Average time (seconds) per kilobyte:", avgTimePerKB)
-            print("Average BYTES per second:", avgBYTESPerSec)
-            print("Average MB per second:", avgMBPerSec)
-            print("Average MegaBits per second:", avgmbps)
+        self.root.config(cursor = 'plus')
 
-            # Display results on window
-            self.downloadData1.config(text = 'Total execution time: ' + str(executionTime))
-            self.downloadData2.config(text = 'Average time (seconds) per KB: ' + str(avgTimePerKB))
-            self.downloadData3.config(text = 'Average Megabits per second: ' + str(avgmbps))
-            
-            self.ProgBar.stop()
-            self.root.config(cursor = 'plus')
-            self.update()
+        # Return time it took to download this file (mbps)
+        return conversion
 
     def startUpload(self, lock):
         with lock:
-            # Setup for test
-            self.ProgBar.pack()
-            self.infoLabel.pack()
+            # Display correct text
+            self.testCanvas.itemconfig(self.text1, text = self.testText2)
+            self.testCanvas.itemconfig(self.text2, text = self.fileSizeText1)
             
-            self.root.config(cursor = 'wait')                        # Change cursor to wait
-            self.infoLabel.config(text = 'Calculating Upload Speed') # Display upload label
-            self.ProgBar['value'] = 0                                      # Display upload progress bar        
-            #self.uploadData1.pack()                                  # Display 'Total execution time'
-            #self.uploadData2.pack()                                  # Display 'Average time (seconds) per MB'
-            #self.uploadData3.pack()                                  # Display 'Average Megabits per second'
+            # Store average data from two files
+            dataTime1 = self.startUTest(self.fileToDL_1, self.fileToUL_1, self.FileSize_1)
+            self.testCanvas.itemconfig(self.text2, text = self.fileSizeText2)
+            dataTime2 = self.startUTest(self.fileToDL_2, self.fileToUL_2, self.FileSize_2)
+            self.avgTime2 = (dataTime1 + dataTime2) / 2
 
-            chunk_size = 1024*1024 # 1MB
-            upload_id = None
-            offset = 0
-            with open(self.fileToUL, 'rb') as f:
-                while offset < self.dFileSize:
-                    offset, upload_id = self.client.upload_chunk(
-                        BytesIO(f.read(chunk_size)),
-                        offset = offset, upload_id = upload_id)
-                    self.ProgBar['value'] = offset
-            self.client.commit_chunked_upload('/auto/' + self.fileToUL, upload_id)
+            """
+            # Print results to console
+            print("Upload times...")
+            print("Time (mbps) for file 1:", dataTime1)
+            print("Time (mbps) for file 2:", dataTime2)
+            print("Average time (mbps):", avgTime)
+            print()
+            """
+
+    def startUTest(self, fileToDL, fileToUL, FileSize):
+        # Setup for test
+        self.ProgBar['value'] = 0
+        self.ProgBar['maximum'] = FileSize
+        self.root.config(cursor = 'wait')                                # Change cursor to wait
+
+        # Start test
+        startTime = time.time()                                          # --Timestamp before uploading file
+        self.ProgBar['value'] = 0                                      
+        chunk_size = 1024*1024 # 1MB
+        upload_id = None
+        offset = 0
+        with open(fileToUL, 'rb') as f:
+            while offset < FileSize:
+                offset, upload_id = self.client.upload_chunk(
+                    BytesIO(f.read(chunk_size)),
+                    offset = offset, upload_id = upload_id)
+                self.ProgBar['value'] = offset
+        self.client.commit_chunked_upload('/auto/' + fileToUL, upload_id)
+        executionTime = time.time() - startTime                          # --Timestamp after uploading file
+
+        # Display results on console
+        speed = FileSize / executionTime            # bytes per second
+        finalSpeed = speed / 1000000                # convert to MB
+        conversion = finalSpeed * 8                 # convert to megabits
+        """
+        print("File name:", fileToUL)
+        print("Bytes per second:", speed)
+        print("Megabytes per second:", finalSpeed)
+        print("Megabits per second:", conversion)
+        print()
+        """
                 
-            # Delete File
-            
-            self.client.file_delete(self.fileToUL) # Remove file from dropbox
-            os.remove(self.fileToUL)               # Remove file from computer
-            
-            completeLabel = tk.Label(text = 'Completed')
-            completeLabel.pack()
-            self.root.config(cursor = 'plus')
-            self.update()
+        # Delete File            
+        self.client.file_delete(fileToUL) # Remove file from dropbox
+        os.remove(fileToUL)               # Remove file from computer
+
+        self.root.config(cursor = 'plus')
+
+        # Return time it took to upload this file (mbps)
+        return conversion
+
+    def changeToResults(self):
+        self.testCanvas.forget()
+        self.testCanvas.destroy()
+
+        self.resultCanvas.pack(side = 'top', fill = 'both', expand = 'yes')
+        self.resultCanvas.create_image(0, 0, image = self.background_image, anchor = 'nw')
+
+        self.resultCanvas.create_text(self.width/2, (self.height/2)*0.3, text = 'Results',\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 26, 'bold'))
+        
+        self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*0.8, text = 'Download Speed',\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 20, 'bold'))
+        self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*1, text = 'Megabits per second:',\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+        self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*1.2, text = self.avgTime1,\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+
+        self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*0.8, text = 'Upload Speed',\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 20, 'bold'))
+        self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*1, text = 'Megabits per second:',\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+        self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*1.2, text = self.avgTime2,\
+                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
 
 if __name__ == '__main__':
     app = tk.Tk()
     app.protocol('WM_DELETE_WINDOW', lambda : app.destroy())
-    Main(app).pack
+    Main(app)
     app.mainloop()
