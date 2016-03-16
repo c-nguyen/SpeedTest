@@ -76,6 +76,7 @@ class Main(tk.Frame):
         lock = threading.Lock()
         self.dThread = threading.Thread(target = self.startDownload, args = (lock,))
         self.uThread = threading.Thread(target = self.startUpload, args = (lock,))
+        self.rThread = threading.Thread(target = self.changeToResults, args = (lock,))
         
     def changeToTest(self):
         # Change root window to test window
@@ -94,8 +95,7 @@ class Main(tk.Frame):
         
         self.dThread.start() # Start download thread       
         self.uThread.start() # Start upload thread
-
-        #self.changeToResults()
+        self.rThread.start() # Show results
 
     def startDownload(self, lock):
         with lock:
