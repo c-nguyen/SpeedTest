@@ -11,6 +11,7 @@ import dropbox
 import tkinter as tk
 import tkinter.ttk as ttk
 import threading
+import queue
 import os
 import time
 
@@ -26,8 +27,9 @@ class Main(tk.Frame):
                                 bd = 0, highlightthickness = 0)     # Test window
         self.resultCanvas = tk.Canvas(self.root, width = self.width, height = self.height,\
                                 bd = 0, highlightthickness = 0)     # Result window
-        
+
         # Files to be tested
+        """
         self.fileToDL_1 = '20MB (1).jpg'
         self.fileToUL_1 = '20MB.jpg'
         self.FileSize_1 = 20899548
@@ -35,6 +37,15 @@ class Main(tk.Frame):
         self.fileToDL_2 = '105MB (1).pdf'
         self.fileToUL_2 = '105MB.pdf'
         self.FileSize_2 = 110728540
+        """
+
+        self.fileToDL_1 = 'TESTING (1).txt'
+        self.fileToUL_1 = 'TESTING.txt'
+        self.FileSize_1 = 21
+        
+        self.fileToDL_2 = 'TESTING2 (1).txt'
+        self.fileToUL_2 = 'TESTING2.txt'
+        self.FileSize_2 = 21
 
         # Set remanining settings
         self.getDimensions(parent)
@@ -73,15 +84,19 @@ class Main(tk.Frame):
                                        mode = 'determinate', style = 'white.Horizontal.TProgressbar')
 
         # Threads
+        avgTime1 = 0
+        avgTime2 = 0
+        q = queue.Queue()
+        
         lock = threading.Lock()
-        self.dThread = threading.Thread(target = self.startDownload, args = (lock,))
-        self.uThread = threading.Thread(target = self.startUpload, args = (lock,))
-        self.rThread = threading.Thread(target = self.changeToResults, args = (lock,))
+        self.dThread = threading.Thread(target = self.startDownload, args = (lock, avgTime1, q))
+        self.uThread = threading.Thread(target = self.startUpload, args = (lock, avgTime2, q))
+        self.rThread = threading.Thread(target = self.changeToResults, args = (lock, q))
         
     def changeToTest(self):
         # Change root window to test window
         self.background_label.forget()
-        self.background_label.destroy()
+        #self.background_label.destroy()
 
         self.testText1 = 'Calculating Download Speed'
         self.testText2 = 'Calculating Upload Speed'
@@ -97,7 +112,7 @@ class Main(tk.Frame):
         self.uThread.start() # Start upload thread
         self.rThread.start() # Show results
 
-    def startDownload(self, lock):
+    def startDownload(self, lock, avgTime1, q):
         with lock:
             # Display text
             self.text1 = self.testCanvas.create_text(self.width/2, (self.height/2)*0.3, text = self.testText1,\
@@ -109,7 +124,8 @@ class Main(tk.Frame):
             dataTime1 = self.startDTest(self.fileToDL_1, self.fileToUL_1, self.FileSize_1)
             self.testCanvas.itemconfig(self.text2, text = self.fileSizeText2)
             dataTime2 = self.startDTest(self.fileToDL_2, self.fileToUL_2, self.FileSize_2)
-            self.avgTime1 = (dataTime1 + dataTime2) / 2
+            avgTime1 = (dataTime1 + dataTime2) / 2
+            q.put(avgTime1)
 
             """
             # Print results to console
@@ -160,7 +176,7 @@ class Main(tk.Frame):
         # Return time it took to download this file (mbps)
         return conversion
 
-    def startUpload(self, lock):
+    def startUpload(self, lock, avgTime2, q):
         with lock:
             # Display correct text
             self.testCanvas.itemconfig(self.text1, text = self.testText2)
@@ -170,7 +186,8 @@ class Main(tk.Frame):
             dataTime1 = self.startUTest(self.fileToDL_1, self.fileToUL_1, self.FileSize_1)
             self.testCanvas.itemconfig(self.text2, text = self.fileSizeText2)
             dataTime2 = self.startUTest(self.fileToDL_2, self.fileToUL_2, self.FileSize_2)
-            self.avgTime2 = (dataTime1 + dataTime2) / 2
+            avgTime2 = (dataTime1 + dataTime2) / 2
+            q.put(avgTime2)
 
             """
             # Print results to console
@@ -223,32 +240,33 @@ class Main(tk.Frame):
         # Return time it took to upload this file (mbps)
         return conversion
 
-    def changeToResults(self):
-        self.testCanvas.forget()
-        self.testCanvas.destroy()
+    def changeToResults(self, lock, q):
+        with lock:
+            self.testCanvas.forget()
+            #self.testCanvas.destroy()
 
-        self.resultCanvas.pack(side = 'top', fill = 'both', expand = 'yes')
-        self.resultCanvas.create_image(0, 0, image = self.background_image, anchor = 'nw')
+            self.resultCanvas.pack(side = 'top', fill = 'both', expand = 'yes')
+            self.resultCanvas.create_image(0, 0, image = self.background_image, anchor = 'nw')
 
-        self.resultCanvas.create_text(self.width/2, (self.height/2)*0.3, text = 'Results',\
-                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 26, 'bold'))
-        
-        self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*0.8, text = 'Download Speed',\
-                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 20, 'bold'))
-        self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*1, text = 'Megabits per second:',\
-                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
-        self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*1.2, text = self.avgTime1,\
-                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+            self.resultCanvas.create_text(self.width/2, (self.height/2)*0.3, text = 'Results',\
+                                        fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 26, 'bold'))
+            
+            self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*0.8, text = 'Download Speed',\
+                                        fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 20, 'bold'))
+            self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*1, text = 'Megabits per second:',\
+                                        fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+            self.resultCanvas.create_text((self.width/2)*0.35, (self.height/2)*1.2, text = q.get(),\
+                                        fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
 
-        self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*0.8, text = 'Upload Speed',\
-                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 20, 'bold'))
-        self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*1, text = 'Megabits per second:',\
-                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
-        self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*1.2, text = self.avgTime2,\
-                                    fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+            self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*0.8, text = 'Upload Speed',\
+                                        fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 20, 'bold'))
+            self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*1, text = 'Megabits per second:',\
+                                        fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
+            self.resultCanvas.create_text((self.width/2)*1.65, (self.height/2)*1.2, text = q.get(),\
+                                        fill = 'white', anchor = tk.CENTER, font = ('Helvetica', 16, 'bold'))
 
 if __name__ == '__main__':
     app = tk.Tk()
-    app.protocol('WM_DELETE_WINDOW', lambda : app.destroy())
+    #app.protocol('WM_DELETE_WINDOW', lambda : app.destroy())
     Main(app)
     app.mainloop()
